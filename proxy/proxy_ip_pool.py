@@ -17,7 +17,9 @@ from .types import IpInfoModel, ProviderNameEnum
 
 
 class ProxyIpPool:
-    def __init__(self, ip_pool_count: int, enable_validate_ip: bool, ip_provider: ProxyProvider) -> None:
+    def __init__(
+        self, ip_pool_count: int, enable_validate_ip: bool, ip_provider: ProxyProvider
+    ) -> None:
         """
 
         Args:
@@ -70,7 +72,7 @@ class ProxyIpPool:
             await self._reload_proxies()
 
         proxy = random.choice(self.proxy_list)
-        self.proxy_list.remove(proxy) # 取出来一个IP就应该移出掉
+        self.proxy_list.remove(proxy)  # 取出来一个IP就应该移出掉
         if self.enable_validate_ip:
             if not await self._is_valid_proxy(proxy):
                 raise Exception("[ProxyIpPool.get_proxy] current ip invalid and again get it")
@@ -87,7 +89,7 @@ class ProxyIpPool:
 
 IpProxyProvider: Dict[str, ProxyProvider] = {
     ProviderNameEnum.JISHU_HTTP_PROVIDER.value: new_jisu_http_proxy(),
-    ProviderNameEnum.KUAI_DAILI_PROVIDER.value: new_kuai_daili_proxy()
+    ProviderNameEnum.KUAI_DAILI_PROVIDER.value: new_kuai_daili_proxy(),
 }
 
 
@@ -98,13 +100,14 @@ async def create_ip_pool(ip_pool_count: int, enable_validate_ip: bool) -> ProxyI
     :param enable_validate_ip: 是否开启验证IP代理
     :return:
     """
-    pool = ProxyIpPool(ip_pool_count=ip_pool_count,
-                       enable_validate_ip=enable_validate_ip,
-                       ip_provider=IpProxyProvider.get(config.IP_PROXY_PROVIDER_NAME)
-                       )
+    pool = ProxyIpPool(
+        ip_pool_count=ip_pool_count,
+        enable_validate_ip=enable_validate_ip,
+        ip_provider=IpProxyProvider.get(config.IP_PROXY_PROVIDER_NAME),
+    )
     await pool.load_proxies()
     return pool
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

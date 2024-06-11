@@ -26,13 +26,15 @@ def calculate_number_of_files(file_store_path: str) -> int:
     if not os.path.exists(file_store_path):
         return 1
     try:
-        return max([int(file_name.split("_")[0])for file_name in os.listdir(file_store_path)])+1
+        return max([int(file_name.split("_")[0]) for file_name in os.listdir(file_store_path)]) + 1
     except ValueError:
         return 1
 
+
 class BiliCsvStoreImplement(AbstractStore):
     csv_store_path: str = "data/bilibili"
-    file_count:int=calculate_number_of_files(csv_store_path)
+    file_count: int = calculate_number_of_files(csv_store_path)
+
     def make_save_file_name(self, store_type: str) -> str:
         """
         make save file name by store type
@@ -56,7 +58,7 @@ class BiliCsvStoreImplement(AbstractStore):
         """
         pathlib.Path(self.csv_store_path).mkdir(parents=True, exist_ok=True)
         save_file_name = self.make_save_file_name(store_type=store_type)
-        async with aiofiles.open(save_file_name, mode='a+', encoding="utf-8-sig", newline="") as f:
+        async with aiofiles.open(save_file_name, mode="a+", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
             if await f.tell() == 0:
                 await writer.writerow(save_item.keys())
@@ -96,9 +98,12 @@ class BiliDbStoreImplement(AbstractStore):
 
         """
 
-        from .bilibili_store_sql import (add_new_content,
-                                         query_content_by_content_id,
-                                         update_content_by_content_id)
+        from .bilibili_store_sql import (
+            add_new_content,
+            query_content_by_content_id,
+            update_content_by_content_id,
+        )
+
         video_id = content_item.get("video_id")
         video_detail: Dict = await query_content_by_content_id(content_id=video_id)
         if not video_detail:
@@ -117,9 +122,12 @@ class BiliDbStoreImplement(AbstractStore):
 
         """
 
-        from .bilibili_store_sql import (add_new_comment,
-                                         query_comment_by_comment_id,
-                                         update_comment_by_comment_id)
+        from .bilibili_store_sql import (
+            add_new_comment,
+            query_comment_by_comment_id,
+            update_comment_by_comment_id,
+        )
+
         comment_id = comment_item.get("comment_id")
         comment_detail: Dict = await query_comment_by_comment_id(comment_id=comment_id)
         if not comment_detail:
@@ -132,8 +140,7 @@ class BiliDbStoreImplement(AbstractStore):
 class BiliJsonStoreImplement(AbstractStore):
     json_store_path: str = "data/bilibili"
     lock = asyncio.Lock()
-    file_count:int=calculate_number_of_files(json_store_path)
-
+    file_count: int = calculate_number_of_files(json_store_path)
 
     def make_save_file_name(self, store_type: str) -> str:
         """
@@ -163,11 +170,11 @@ class BiliJsonStoreImplement(AbstractStore):
 
         async with self.lock:
             if os.path.exists(save_file_name):
-                async with aiofiles.open(save_file_name, 'r', encoding='utf-8') as file:
+                async with aiofiles.open(save_file_name, "r", encoding="utf-8") as file:
                     save_data = json.loads(await file.read())
 
             save_data.append(save_item)
-            async with aiofiles.open(save_file_name, 'w', encoding='utf-8') as file:
+            async with aiofiles.open(save_file_name, "w", encoding="utf-8") as file:
                 await file.write(json.dumps(save_data, ensure_ascii=False))
 
     async def store_content(self, content_item: Dict):

@@ -12,7 +12,7 @@ from tools import utils
 
 app = FastAPI()
 
-cache_client : AbstractCache = CacheFactory.create_cache(cache_type=config.CACHE_TYPE_MEMORY)
+cache_client: AbstractCache = CacheFactory.create_cache(cache_type=config.CACHE_TYPE_MEMORY)
 
 
 class SmsNotification(BaseModel):
@@ -27,7 +27,7 @@ def extract_verification_code(message: str) -> str:
     """
     Extract verification code of 6 digits from the SMS.
     """
-    pattern = re.compile(r'\b[0-9]{6}\b')
+    pattern = re.compile(r"\b[0-9]{6}\b")
     codes: List[str] = pattern.findall(message)
     return codes[0] if codes else ""
 
@@ -64,5 +64,5 @@ async def not_found():
     raise HTTPException(status_code=404, detail="Not Found")
 
 
-if __name__ == '__main__':
-    uvicorn.run(app, port=8000, host='0.0.0.0')
+if __name__ == "__main__":
+    uvicorn.run(app, port=8000, host="0.0.0.0")

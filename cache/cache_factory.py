@@ -19,11 +19,13 @@ class CacheFactory:
         :param kwargs: 关键字参数
         :return:
         """
-        if cache_type == 'memory':
+        if cache_type == "memory":
             from .local_cache import ExpiringLocalCache
+
             return ExpiringLocalCache(*args, **kwargs)
-        elif cache_type == 'redis':
+        elif cache_type == "redis":
             from .redis_cache import RedisCache
+
             return RedisCache()
         else:
-            raise ValueError(f'Unknown cache type: {cache_type}')
+            raise ValueError(f"Unknown cache type: {cache_type}")

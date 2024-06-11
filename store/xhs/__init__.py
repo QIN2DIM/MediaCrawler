@@ -11,17 +11,15 @@ from .xhs_store_impl import *
 
 
 class XhsStoreFactory:
-    STORES = {
-        "csv": XhsCsvStoreImplement,
-        "db": XhsDbStoreImplement,
-        "json": XhsJsonStoreImplement
-    }
+    STORES = {"csv": XhsCsvStoreImplement, "db": XhsDbStoreImplement, "json": XhsJsonStoreImplement}
 
     @staticmethod
     def create_store() -> AbstractStore:
         store_class = XhsStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
         if not store_class:
-            raise ValueError("[XhsStoreFactory.create_store] Invalid save option only supported csv or db or json ...")
+            raise ValueError(
+                "[XhsStoreFactory.create_store] Invalid save option only supported csv or db or json ..."
+            )
         return store_class()
 
 
@@ -32,11 +30,11 @@ async def update_xhs_note(note_item: Dict):
     image_list: List[Dict] = note_item.get("image_list", [])
     tag_list: List[Dict] = note_item.get("tag_list", [])
 
-    video_url = ''
-    if note_item.get('type') == 'video':
-        videos = note_item.get('video').get('media').get('stream').get('h264')
-        if type(videos).__name__ == 'list':
-            video_url = ','.join([v.get('master_url') for v in videos])
+    video_url = ""
+    if note_item.get("type") == "video":
+        videos = note_item.get("video").get("media").get("stream").get("h264")
+        if type(videos).__name__ == "list":
+            video_url = ",".join([v.get("master_url") for v in videos])
 
     local_db_item = {
         "note_id": note_item.get("note_id"),
@@ -54,10 +52,12 @@ async def update_xhs_note(note_item: Dict):
         "comment_count": interact_info.get("comment_count"),
         "share_count": interact_info.get("share_count"),
         "ip_location": note_item.get("ip_location", ""),
-        "image_list": ','.join([img.get('url', '') for img in image_list]),
-        "tag_list": ','.join([tag.get('name', '') for tag in tag_list if tag.get('type') == 'topic']),
+        "image_list": ",".join([img.get("url", "") for img in image_list]),
+        "tag_list": ",".join(
+            [tag.get("name", "") for tag in tag_list if tag.get("type") == "topic"]
+        ),
         "last_modify_ts": utils.get_current_timestamp(),
-        "note_url": f"https://www.xiaohongshu.com/explore/{note_id}"
+        "note_url": f"https://www.xiaohongshu.com/explore/{note_id}",
     }
     utils.logger.info(f"[store.xhs.update_xhs_note] xhs note: {local_db_item}")
     await XhsStoreFactory.create_store().store_content(local_db_item)
@@ -94,31 +94,32 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
 
 
 async def save_creator(user_id: str, creator: Dict):
-    user_info = creator.get('basicInfo', {})
+    user_info = creator.get("basicInfo", {})
 
     follows = 0
     fans = 0
     interaction = 0
-    for i in creator.get('interactions'):
-        if i.get('type') == 'follows':
-            follows = i.get('count')
-        elif i.get('type') == 'fans':
-            fans = i.get('count')
-        elif i.get('type') == 'interaction':
-            interaction = i.get('count')
+    for i in creator.get("interactions"):
+        if i.get("type") == "follows":
+            follows = i.get("count")
+        elif i.get("type") == "fans":
+            fans = i.get("count")
+        elif i.get("type") == "interaction":
+            interaction = i.get("count")
 
     local_db_item = {
-        'user_id': user_id,
-        'nickname': user_info.get('nickname'),
-        'gender': '女' if user_info.get('gender') == 1 else '男',
-        'avatar': user_info.get('images'),
-        'desc': user_info.get('desc'),
-        'ip_location': user_info.get('ip_location'),
-        'follows': follows,
-        'fans': fans,
-        'interaction': interaction,
-        'tag_list': json.dumps({tag.get('tagType'): tag.get('name') for tag in creator.get('tags')},
-                               ensure_ascii=False),
+        "user_id": user_id,
+        "nickname": user_info.get("nickname"),
+        "gender": "女" if user_info.get("gender") == 1 else "男",
+        "avatar": user_info.get("images"),
+        "desc": user_info.get("desc"),
+        "ip_location": user_info.get("ip_location"),
+        "follows": follows,
+        "fans": fans,
+        "interaction": interaction,
+        "tag_list": json.dumps(
+            {tag.get("tagType"): tag.get("name") for tag in creator.get("tags")}, ensure_ascii=False
+        ),
         "last_modify_ts": utils.get_current_timestamp(),
     }
     utils.logger.info(f"[store.xhs.save_creator] creator:{local_db_item}")

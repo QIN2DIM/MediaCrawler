@@ -4,8 +4,7 @@ import random
 from asyncio import Task
 from typing import Any, Dict, List, Optional, Tuple
 
-from playwright.async_api import (BrowserContext, BrowserType, Page,
-                                  async_playwright)
+from playwright.async_api import BrowserContext, BrowserType, Page, async_playwright
 
 import config
 from base.base_crawler import AbstractCrawler
@@ -35,7 +34,9 @@ class DouYinCrawler(AbstractCrawler):
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"  # fixed
         self.index_url = "https://www.douyin.com"
 
-    def init_config(self, platform: str, login_type: str, crawler_type: str, start_page: int, keyword: str) -> None:
+    def init_config(
+        self, platform: str, login_type: str, crawler_type: str, start_page: int, keyword: str
+    ) -> None:
         self.platform = platform
         self.login_type = login_type
         self.crawler_type = crawler_type
@@ -45,7 +46,9 @@ class DouYinCrawler(AbstractCrawler):
     async def start(self) -> None:
         playwright_proxy_format, httpx_proxy_format = None, None
         if config.ENABLE_IP_PROXY:
-            ip_proxy_pool = await create_ip_pool(config.IP_PROXY_POOL_COUNT, enable_validate_ip=True)
+            ip_proxy_pool = await create_ip_pool(
+                config.IP_PROXY_POOL_COUNT, enable_validate_ip=True
+            )
             ip_proxy_info: IpInfoModel = await ip_proxy_pool.get_proxy()
             playwright_proxy_format, httpx_proxy_format = self.format_proxy_info(ip_proxy_info)
 
@@ -53,10 +56,7 @@ class DouYinCrawler(AbstractCrawler):
             # Launch a browser context.
             chromium = playwright.chromium
             self.browser_context = await self.launch_browser(
-                chromium,
-                None,
-                self.user_agent,
-                headless=config.HEADLESS
+                chromium, None, self.user_agent, headless=config.HEADLESS
             )
             # stealth.min.js is a js script to prevent the website from detecting the crawler.
             await self.browser_context.add_init_script(path="libs/stealth.min.js")
@@ -70,7 +70,7 @@ class DouYinCrawler(AbstractCrawler):
                     login_phone="",  # you phone number
                     browser_context=self.browser_context,
                     context_page=self.context_page,
-                    cookie_str=config.COOKIES
+                    cookie_str=config.COOKIES,
                 )
                 await login_obj.begin()
                 await self.dy_client.update_cookies(browser_context=self.browser_context)
@@ -103,24 +103,30 @@ class DouYinCrawler(AbstractCrawler):
                     page += 1
                     continue
                 try:
-                    posts_res = await self.dy_client.search_info_by_keyword(keyword=keyword,
-                                                                            offset=page * dy_limit_count,
-                                                                            publish_time=PublishTimeType.UNLIMITED
-                                                                            )
+                    posts_res = await self.dy_client.search_info_by_keyword(
+                        keyword=keyword,
+                        offset=page * dy_limit_count,
+                        publish_time=PublishTimeType.UNLIMITED,
+                    )
                 except DataFetchError:
-                    utils.logger.error(f"[DouYinCrawler.search] search douyin keyword: {keyword} failed")
+                    utils.logger.error(
+                        f"[DouYinCrawler.search] search douyin keyword: {keyword} failed"
+                    )
                     break
 
                 page += 1
                 if "data" not in posts_res:
                     utils.logger.error(
-                        f"[DouYinCrawler.search] search douyin keyword: {keyword} failed，账号也许被风控了。")
+                        f"[DouYinCrawler.search] search douyin keyword: {keyword} failed，账号也许被风控了。"
+                    )
                     break
 
                 for post_item in posts_res.get("data"):
                     try:
-                        aweme_info: Dict = post_item.get("aweme_info") or \
-                                           post_item.get("aweme_mix_info", {}).get("mix_items")[0]
+                        aweme_info: Dict = (
+                            post_item.get("aweme_info")
+                            or post_item.get("aweme_mix_info", {}).get("mix_items")[0]
+                        )
                     except TypeError:
                         continue
                     aweme_list.append(aweme_info.get("aweme_id", ""))
@@ -132,7 +138,8 @@ class DouYinCrawler(AbstractCrawler):
         """Get the information and comments of the specified post"""
         semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
         task_list = [
-            self.get_aweme_detail(aweme_id=aweme_id, semaphore=semaphore) for aweme_id in config.DY_SPECIFIED_ID_LIST
+            self.get_aweme_detail(aweme_id=aweme_id, semaphore=semaphore)
+            for aweme_id in config.DY_SPECIFIED_ID_LIST
         ]
         aweme_details = await asyncio.gather(*task_list)
         for aweme_detail in aweme_details:
@@ -150,7 +157,8 @@ class DouYinCrawler(AbstractCrawler):
                 return None
             except KeyError as ex:
                 utils.logger.error(
-                    f"[DouYinCrawler.get_aweme_detail] have not fund note detail aweme_id:{aweme_id}, err: {ex}")
+                    f"[DouYinCrawler.get_aweme_detail] have not fund note detail aweme_id:{aweme_id}, err: {ex}"
+                )
                 return None
 
     async def batch_get_note_comments(self, aweme_list: List[str]) -> None:
@@ -158,14 +166,15 @@ class DouYinCrawler(AbstractCrawler):
         Batch get note comments
         """
         if not config.ENABLE_GET_COMMENTS:
-            utils.logger.info(f"[DouYinCrawler.batch_get_note_comments] Crawling comment mode is not enabled")
+            utils.logger.info(
+                f"[DouYinCrawler.batch_get_note_comments] Crawling comment mode is not enabled"
+            )
             return
 
         task_list: List[Task] = []
         semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
         for aweme_id in aweme_list:
-            task = asyncio.create_task(
-                self.get_comments(aweme_id, semaphore), name=aweme_id)
+            task = asyncio.create_task(self.get_comments(aweme_id, semaphore), name=aweme_id)
             task_list.append(task)
         if len(task_list) > 0:
             await asyncio.wait(task_list)
@@ -178,12 +187,15 @@ class DouYinCrawler(AbstractCrawler):
                     aweme_id=aweme_id,
                     crawl_interval=random.random(),
                     is_fetch_sub_comments=config.ENABLE_GET_SUB_COMMENTS,
-                    callback=douyin_store.batch_update_dy_aweme_comments
+                    callback=douyin_store.batch_update_dy_aweme_comments,
                 )
                 utils.logger.info(
-                    f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} comments have all been obtained and filtered ...")
+                    f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} comments have all been obtained and filtered ..."
+                )
             except DataFetchError as e:
-                utils.logger.error(f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} get comments failed, error: {e}")
+                utils.logger.error(
+                    f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} get comments failed, error: {e}"
+                )
 
     async def get_creators_and_videos(self) -> None:
         """
@@ -197,8 +209,7 @@ class DouYinCrawler(AbstractCrawler):
 
             # Get all video information of the creator
             all_video_list = await self.dy_client.get_all_user_aweme_posts(
-                sec_user_id=user_id,
-                callback=self.fetch_creator_video_detail
+                sec_user_id=user_id, callback=self.fetch_creator_video_detail
             )
 
             video_ids = [video_item.get("aweme_id") for video_item in all_video_list]
@@ -242,7 +253,7 @@ class DouYinCrawler(AbstractCrawler):
                 "Host": "www.douyin.com",
                 "Origin": "https://www.douyin.com/",
                 "Referer": "https://www.douyin.com/",
-                "Content-Type": "application/json;charset=UTF-8"
+                "Content-Type": "application/json;charset=UTF-8",
             },
             playwright_page=self.context_page,
             cookie_dict=cookie_dict,
@@ -250,30 +261,30 @@ class DouYinCrawler(AbstractCrawler):
         return douyin_client
 
     async def launch_browser(
-            self,
-            chromium: BrowserType,
-            playwright_proxy: Optional[Dict],
-            user_agent: Optional[str],
-            headless: bool = True
+        self,
+        chromium: BrowserType,
+        playwright_proxy: Optional[Dict],
+        user_agent: Optional[str],
+        headless: bool = True,
     ) -> BrowserContext:
         """Launch browser and create browser context"""
         if config.SAVE_LOGIN_STATE:
-            user_data_dir = os.path.join(os.getcwd(), "browser_data",
-                                         config.USER_DATA_DIR % self.platform)  # type: ignore
+            user_data_dir = os.path.join(
+                os.getcwd(), "browser_data", config.USER_DATA_DIR % self.platform
+            )  # type: ignore
             browser_context = await chromium.launch_persistent_context(
                 user_data_dir=user_data_dir,
                 accept_downloads=True,
                 headless=headless,
                 proxy=playwright_proxy,  # type: ignore
                 viewport={"width": 1920, "height": 1080},
-                user_agent=user_agent
+                user_agent=user_agent,
             )  # type: ignore
             return browser_context
         else:
             browser = await chromium.launch(headless=headless, proxy=playwright_proxy)  # type: ignore
             browser_context = await browser.new_context(
-                viewport={"width": 1920, "height": 1080},
-                user_agent=user_agent
+                viewport={"width": 1920, "height": 1080}, user_agent=user_agent
             )
             return browser_context
 

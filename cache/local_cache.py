@@ -66,12 +66,12 @@ class ExpiringLocalCache(AbstractCache):
         :param pattern: 匹配模式
         :return:
         """
-        if pattern == '*':
+        if pattern == "*":
             return list(self._cache_container.keys())
 
         # 本地缓存通配符暂时将*替换为空
-        if '*' in pattern:
-            pattern = pattern.replace('*', '')
+        if "*" in pattern:
+            pattern = pattern.replace("*", "")
 
         return [key for key in self._cache_container.keys() if pattern in key]
 
@@ -108,13 +108,13 @@ class ExpiringLocalCache(AbstractCache):
             await asyncio.sleep(self._cron_interval)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cache = ExpiringLocalCache(cron_interval=2)
-    cache.set('name', '程序员阿江-Relakkes', 3)
-    print(cache.get('key'))
+    cache.set("name", "程序员阿江-Relakkes", 3)
+    print(cache.get("key"))
     print(cache.keys("*"))
     time.sleep(4)
-    print(cache.get('key'))
+    print(cache.get("key"))
     del cache
     time.sleep(1)
     print("done")

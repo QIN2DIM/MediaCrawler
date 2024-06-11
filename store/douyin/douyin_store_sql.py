@@ -51,9 +51,10 @@ async def update_content_by_content_id(content_id: str, content_item: Dict) -> i
 
     """
     async_db_conn: AsyncMysqlDB = media_crawler_db_var.get()
-    effect_row: int = await async_db_conn.update_table("douyin_aweme", content_item, "aweme_id", content_id)
+    effect_row: int = await async_db_conn.update_table(
+        "douyin_aweme", content_item, "aweme_id", content_id
+    )
     return effect_row
-
 
 
 async def query_comment_by_comment_id(comment_id: str) -> Dict:
@@ -98,7 +99,9 @@ async def update_comment_by_comment_id(comment_id: str, comment_item: Dict) -> i
 
     """
     async_db_conn: AsyncMysqlDB = media_crawler_db_var.get()
-    effect_row: int = await async_db_conn.update_table("douyin_aweme_comment", comment_item, "comment_id", comment_id)
+    effect_row: int = await async_db_conn.update_table(
+        "douyin_aweme_comment", comment_item, "comment_id", comment_id
+    )
     return effect_row
 
 
@@ -144,5 +147,7 @@ async def update_creator_by_user_id(user_id: str, creator_item: Dict) -> int:
 
     """
     async_db_conn: AsyncMysqlDB = media_crawler_db_var.get()
-    effect_row: int = await async_db_conn.update_table("dy_creator", creator_item, "user_id", user_id)
+    effect_row: int = await async_db_conn.update_table(
+        "dy_creator", creator_item, "user_id", user_id
+    )
     return effect_row

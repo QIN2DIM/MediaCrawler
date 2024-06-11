@@ -60,7 +60,7 @@ class RedisCache(AbstractCache):
         return [key.decode() for key in self._redis_client.keys(pattern)]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     redis_cache = RedisCache()
     # basic usage
     redis_cache.set("name", "程序员阿江-Relakkes", 1)
