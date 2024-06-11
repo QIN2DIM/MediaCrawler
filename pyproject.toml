@@ -19,6 +19,7 @@ aiofiles = "^23.2.1"
 fastapi = {extras = ["all"], version = "^0.111.0"}
 opencv-python = "^4.10.0.82"
 pyexecjs = "^1.5.1"
+loguru = "^0.7.2"
 
 
 [tool.poetry.group.dev.dependencies]
