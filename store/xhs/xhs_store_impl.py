@@ -12,7 +12,7 @@ from typing import Dict
 import aiofiles
 
 from base.base_crawler import AbstractStore
-from tools import utils
+from tools.time_util import get_current_timestamp, get_current_date
 from var import crawler_type_var
 
 
@@ -44,7 +44,7 @@ class XhsCsvStoreImplement(AbstractStore):
         Returns: eg: data/xhs/search_comments_20240114.csv ...
 
         """
-        return f"{self.csv_store_path}/{self.file_count}_{crawler_type_var.get()}_{store_type}_{utils.get_current_date()}.csv"
+        return f"{self.csv_store_path}/{self.file_count}_{crawler_type_var.get()}_{store_type}_{get_current_date()}.csv"
 
     async def save_data_to_csv(self, save_item: Dict, store_type: str):
         """
@@ -118,7 +118,7 @@ class XhsDbStoreImplement(AbstractStore):
         note_id = content_item.get("note_id")
         note_detail: Dict = await query_content_by_content_id(content_id=note_id)
         if not note_detail:
-            content_item["add_ts"] = utils.get_current_timestamp()
+            content_item["add_ts"] = get_current_timestamp()
             await add_new_content(content_item)
         else:
             await update_content_by_content_id(note_id, content_item=content_item)
@@ -141,7 +141,7 @@ class XhsDbStoreImplement(AbstractStore):
         comment_id = comment_item.get("comment_id")
         comment_detail: Dict = await query_comment_by_comment_id(comment_id=comment_id)
         if not comment_detail:
-            comment_item["add_ts"] = utils.get_current_timestamp()
+            comment_item["add_ts"] = get_current_timestamp()
             await add_new_comment(comment_item)
         else:
             await update_comment_by_comment_id(comment_id, comment_item=comment_item)
@@ -164,7 +164,7 @@ class XhsDbStoreImplement(AbstractStore):
         user_id = creator.get("user_id")
         user_detail: Dict = await query_creator_by_user_id(user_id)
         if not user_detail:
-            creator["add_ts"] = utils.get_current_timestamp()
+            creator["add_ts"] = get_current_timestamp()
             await add_new_creator(creator)
         else:
             await update_creator_by_user_id(user_id, creator)
@@ -185,7 +185,7 @@ class XhsJsonStoreImplement(AbstractStore):
 
         """
 
-        return f"{self.json_store_path}/{self.file_count}_{crawler_type_var.get()}_{store_type}_{utils.get_current_date()}.json"
+        return f"{self.json_store_path}/{self.file_count}_{crawler_type_var.get()}_{store_type}_{get_current_date()}.json"
 
     async def save_data_to_json(self, save_item: Dict, store_type: str):
         """

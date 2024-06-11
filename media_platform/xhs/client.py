@@ -5,15 +5,15 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import urlencode
 
 import httpx
+from loguru import logger
 from playwright.async_api import BrowserContext, Page
 
 import config
 from base.base_crawler import AbstractApiClient
-from tools import utils
-
-from .exception import DataFetchError, IPBlockError
-from .field import SearchNoteType, SearchSortType
-from .help import get_search_id, sign
+from media_platform.xhs.exception import DataFetchError, IPBlockError
+from media_platform.xhs.field import SearchNoteType, SearchSortType
+from media_platform.xhs.help import get_search_id, sign
+from tools import convert_cookies
 
 
 class XiaoHongShuClient(AbstractApiClient):
@@ -94,7 +94,7 @@ class XiaoHongShuClient(AbstractApiClient):
         elif data["code"] == self.IP_ERROR_CODE:
             raise IPBlockError(self.IP_ERROR_STR)
         else:
-            raise DataFetchError(data.get("msg", None))
+            raise DataFetchError(data.get("msg", ""))
 
     async def get(self, uri: str, params=None) -> Dict:
         """
@@ -135,14 +135,14 @@ class XiaoHongShuClient(AbstractApiClient):
 
         """
         """get a note to check if login state is ok"""
-        utils.logger.info("[XiaoHongShuClient.pong] Begin to pong xhs...")
+        logger.info("[XiaoHongShuClient.pong] Begin to pong xhs...")
         ping_flag = False
         try:
             note_card: Dict = await self.get_note_by_keyword(keyword="小红书")
             if note_card.get("items"):
                 ping_flag = True
         except Exception as e:
-            utils.logger.error(
+            logger.error(
                 f"[XiaoHongShuClient.pong] Ping xhs failed: {e}, and try to login again..."
             )
             ping_flag = False
@@ -157,7 +157,7 @@ class XiaoHongShuClient(AbstractApiClient):
         Returns:
 
         """
-        cookie_str, cookie_dict = utils.convert_cookies(await browser_context.cookies())
+        cookie_str, cookie_dict = convert_cookies(await browser_context.cookies())
         self.headers["Cookie"] = cookie_str
         self.cookie_dict = cookie_dict
 
@@ -207,7 +207,7 @@ class XiaoHongShuClient(AbstractApiClient):
         if res and res.get("items"):
             res_dict: Dict = res["items"][0]["note_card"]
             return res_dict
-        utils.logger.error(f"[XiaoHongShuClient.get_note_by_id] get note empty and res:{res}")
+        logger.error(f"[XiaoHongShuClient.get_note_by_id] get note empty and res:{res}")
         return dict()
 
     async def get_note_comments(self, note_id: str, cursor: str = "") -> Dict:
@@ -273,7 +273,7 @@ class XiaoHongShuClient(AbstractApiClient):
             comments_has_more = comments_res.get("has_more", False)
             comments_cursor = comments_res.get("cursor", "")
             if "comments" not in comments_res:
-                utils.logger.info(
+                logger.info(
                     f"[XiaoHongShuClient.get_note_all_comments] No 'comments' key found in response: {comments_res}"
                 )
                 break
@@ -302,7 +302,7 @@ class XiaoHongShuClient(AbstractApiClient):
 
         """
         if not config.ENABLE_GET_SUB_COMMENTS:
-            utils.logger.info(
+            logger.info(
                 f"[XiaoHongShuCrawler.get_comments_all_sub_comments] Crawling sub_comment mode is not enabled"
             )
             return []
@@ -328,7 +328,7 @@ class XiaoHongShuClient(AbstractApiClient):
                 sub_comment_has_more = comments_res.get("has_more", False)
                 sub_comment_cursor = comments_res.get("cursor", "")
                 if "comments" not in comments_res:
-                    utils.logger.info(
+                    logger.info(
                         f"[XiaoHongShuClient.get_comments_all_sub_comments] No 'comments' key found in response: {comments_res}"
                     )
                     break
@@ -349,7 +349,7 @@ class XiaoHongShuClient(AbstractApiClient):
         html_content = await self.request(
             "GET", self._domain + uri, return_response=True, headers=self.headers
         )
-        match = re.search(r"<script>window.__INITIAL_STATE__=(.+)<\/script>", html_content, re.M)
+        match = re.search(r"<script>window.__INITIAL_STATE__=(.+)</script>", html_content, re.M)
 
         if match is None:
             return {}
@@ -398,7 +398,7 @@ class XiaoHongShuClient(AbstractApiClient):
         while notes_has_more:
             notes_res = await self.get_notes_by_creator(user_id, notes_cursor)
             if not notes_res:
-                utils.logger.error(
+                logger.error(
                     f"[XiaoHongShuClient.get_notes_by_creator] The current creator may have been banned by xhs, so they cannot access the data."
                 )
                 break
@@ -406,13 +406,13 @@ class XiaoHongShuClient(AbstractApiClient):
             notes_has_more = notes_res.get("has_more", False)
             notes_cursor = notes_res.get("cursor", "")
             if "notes" not in notes_res:
-                utils.logger.info(
+                logger.info(
                     f"[XiaoHongShuClient.get_all_notes_by_creator] No 'notes' key found in response: {notes_res}"
                 )
                 break
 
             notes = notes_res["notes"]
-            utils.logger.info(
+            logger.info(
                 f"[XiaoHongShuClient.get_all_notes_by_creator] got user_id:{user_id} notes len : {len(notes)}"
             )
             if callback:

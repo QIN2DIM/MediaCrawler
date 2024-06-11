@@ -14,7 +14,6 @@ import httpx
 from playwright.async_api import BrowserContext, Page
 
 from tools import utils
-
 from .exception import DataFetchError
 from .field import SearchType
 

@@ -6,7 +6,6 @@
 from typing import List
 
 import config
-
 from .bilibili_store_impl import *
 
 

@@ -4,19 +4,19 @@ import random
 from asyncio import Task
 from typing import Dict, List, Optional, Tuple
 
+from loguru import logger
 from playwright.async_api import BrowserContext, BrowserType, Page, async_playwright
 
 import config
 from base.base_crawler import AbstractCrawler
+from media_platform.xhs.client import XiaoHongShuClient
+from media_platform.xhs.exception import DataFetchError
+from media_platform.xhs.field import SearchSortType
+from media_platform.xhs.login import XiaoHongShuLogin
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import xhs as xhs_store
-from tools import utils
+from tools import convert_cookies, get_user_agent
 from var import crawler_type_var
-
-from .client import XiaoHongShuClient
-from .exception import DataFetchError
-from .field import SearchSortType
-from .login import XiaoHongShuLogin
 
 
 class XiaoHongShuCrawler(AbstractCrawler):
@@ -29,7 +29,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
 
     def __init__(self) -> None:
         self.index_url = "https://www.xiaohongshu.com"
-        self.user_agent = utils.get_user_agent()
+        self.user_agent = get_user_agent()
 
     def init_config(
         self, platform: str, login_type: str, crawler_type: str, start_page: int, keyword: str
@@ -97,21 +97,21 @@ class XiaoHongShuCrawler(AbstractCrawler):
             else:
                 pass
 
-            utils.logger.info("[XiaoHongShuCrawler.start] Xhs Crawler finished ...")
+            logger.info("[XiaoHongShuCrawler.start] Xhs Crawler finished ...")
 
     async def search(self) -> None:
         """Search for notes and retrieve their comment information."""
-        utils.logger.info("[XiaoHongShuCrawler.search] Begin search xiaohongshu keywords")
+        logger.info("[XiaoHongShuCrawler.search] Begin search xiaohongshu keywords")
         xhs_limit_count = 20  # xhs limit page fixed value
         if config.CRAWLER_MAX_NOTES_COUNT < xhs_limit_count:
             config.CRAWLER_MAX_NOTES_COUNT = xhs_limit_count
         start_page = self.start_page
         for keyword in self.keyword.split(","):
-            utils.logger.info(f"[XiaoHongShuCrawler.search] Current search keyword: {keyword}")
+            logger.info(f"[XiaoHongShuCrawler.search] Current search keyword: {keyword}")
             page = 1
             while (page - start_page + 1) * xhs_limit_count <= config.CRAWLER_MAX_NOTES_COUNT:
                 if page < start_page:
-                    utils.logger.info(f"[XiaoHongShuCrawler.search] Skip page {page}")
+                    logger.info(f"[XiaoHongShuCrawler.search] Skip page {page}")
                     page += 1
                     continue
 
@@ -126,7 +126,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
                             else SearchSortType.GENERAL
                         ),
                     )
-                    utils.logger.info(f"[XiaoHongShuCrawler.search] Search notes res:{notes_res}")
+                    logger.info(f"[XiaoHongShuCrawler.search] Search notes res:{notes_res}")
                     semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
                     task_list = [
                         self.get_note_detail(post_item.get("id"), semaphore)
@@ -139,17 +139,15 @@ class XiaoHongShuCrawler(AbstractCrawler):
                             await xhs_store.update_xhs_note(note_detail)
                             note_id_list.append(note_detail.get("note_id"))
                     page += 1
-                    utils.logger.info(f"[XiaoHongShuCrawler.search] Note details: {note_details}")
+                    logger.info(f"[XiaoHongShuCrawler.search] Note details: {note_details}")
                     await self.batch_get_note_comments(note_id_list)
                 except DataFetchError:
-                    utils.logger.error("[XiaoHongShuCrawler.search] Get note detail error")
+                    logger.error("[XiaoHongShuCrawler.search] Get note detail error")
                     break
 
     async def get_creators_and_notes(self) -> None:
         """Get creator's notes and retrieve their comment information."""
-        utils.logger.info(
-            "[XiaoHongShuCrawler.get_creators_and_notes] Begin get xiaohongshu creators"
-        )
+        logger.info("[XiaoHongShuCrawler.get_creators_and_notes] Begin get xiaohongshu creators")
         for user_id in config.XHS_CREATOR_ID_LIST:
             # get creator detail info from web html content
             createor_info: Dict = await self.xhs_client.get_creator_info(user_id=user_id)
@@ -199,12 +197,10 @@ class XiaoHongShuCrawler(AbstractCrawler):
             try:
                 return await self.xhs_client.get_note_by_id(note_id)
             except DataFetchError as ex:
-                utils.logger.error(
-                    f"[XiaoHongShuCrawler.get_note_detail] Get note detail error: {ex}"
-                )
+                logger.error(f"[XiaoHongShuCrawler.get_note_detail] Get note detail error: {ex}")
                 return None
             except KeyError as ex:
-                utils.logger.error(
+                logger.error(
                     f"[XiaoHongShuCrawler.get_note_detail] have not fund note detail note_id:{note_id}, err: {ex}"
                 )
                 return None
@@ -212,12 +208,12 @@ class XiaoHongShuCrawler(AbstractCrawler):
     async def batch_get_note_comments(self, note_list: List[str]):
         """Batch get note comments"""
         if not config.ENABLE_GET_COMMENTS:
-            utils.logger.info(
+            logger.info(
                 f"[XiaoHongShuCrawler.batch_get_note_comments] Crawling comment mode is not enabled"
             )
             return
 
-        utils.logger.info(
+        logger.info(
             f"[XiaoHongShuCrawler.batch_get_note_comments] Begin batch get note comments, note list: {note_list}"
         )
         semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
@@ -230,9 +226,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
     async def get_comments(self, note_id: str, semaphore: asyncio.Semaphore):
         """Get note comments with keyword filtering and quantity limitation"""
         async with semaphore:
-            utils.logger.info(
-                f"[XiaoHongShuCrawler.get_comments] Begin get note id comments {note_id}"
-            )
+            logger.info(f"[XiaoHongShuCrawler.get_comments] Begin get note id comments {note_id}")
             await self.xhs_client.get_note_all_comments(
                 note_id=note_id,
                 crawl_interval=random.random(),
@@ -254,10 +248,10 @@ class XiaoHongShuCrawler(AbstractCrawler):
 
     async def create_xhs_client(self, httpx_proxy: Optional[str]) -> XiaoHongShuClient:
         """Create xhs client"""
-        utils.logger.info(
+        logger.info(
             "[XiaoHongShuCrawler.create_xhs_client] Begin create xiaohongshu API client ..."
         )
-        cookie_str, cookie_dict = utils.convert_cookies(await self.browser_context.cookies())
+        cookie_str, cookie_dict = convert_cookies(await self.browser_context.cookies())
         xhs_client_obj = XiaoHongShuClient(
             proxies=httpx_proxy,
             headers={
@@ -280,7 +274,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
         headless: bool = True,
     ) -> BrowserContext:
         """Launch browser and create browser context"""
-        utils.logger.info("[XiaoHongShuCrawler.launch_browser] Begin create browser context ...")
+        logger.info("[XiaoHongShuCrawler.launch_browser] Begin create browser context ...")
         if config.SAVE_LOGIN_STATE:
             # feat issue #14
             # we will save login state to avoid login every time
@@ -306,4 +300,4 @@ class XiaoHongShuCrawler(AbstractCrawler):
     async def close(self):
         """Close browser context"""
         await self.browser_context.close()
-        utils.logger.info("[XiaoHongShuCrawler.close] Browser context closed ...")
+        logger.info("[XiaoHongShuCrawler.close] Browser context closed ...")

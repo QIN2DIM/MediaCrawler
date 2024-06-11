@@ -11,7 +11,6 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 import config
 from proxy.providers import new_jisu_http_proxy, new_kuai_daili_proxy
 from tools import utils
-
 from .base_proxy import ProxyProvider
 from .types import IpInfoModel, ProviderNameEnum
 

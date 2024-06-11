@@ -12,7 +12,6 @@ from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import douyin as douyin_store
 from tools import utils
 from var import crawler_type_var
-
 from .client import DOUYINClient
 from .exception import DataFetchError
 from .field import PublishTimeType

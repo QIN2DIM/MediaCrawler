@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import urllib.parse
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 import execjs
 import httpx
@@ -10,7 +10,6 @@ from playwright.async_api import BrowserContext, Page
 from base.base_crawler import AbstractApiClient
 from tools import utils
 from var import request_keyword_var
-
 from .exception import *
 from .field import *
 

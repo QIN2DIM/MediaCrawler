@@ -5,7 +5,6 @@
 from typing import List
 
 import config
-
 from .kuaishou_store_impl import *
 
 

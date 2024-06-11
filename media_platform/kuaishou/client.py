@@ -7,10 +7,8 @@ from urllib.parse import urlencode
 import httpx
 from playwright.async_api import BrowserContext, Page
 
-import config
 from base.base_crawler import AbstractApiClient
 from tools import utils
-
 from .exception import DataFetchError
 from .graphql import KuaiShouGraphQL
 

@@ -7,7 +7,6 @@ import re
 from typing import List
 
 import config
-
 from .weibo_store_image import *
 from .weibo_store_impl import *
 

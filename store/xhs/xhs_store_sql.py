@@ -2,7 +2,6 @@
 # @Author  : relakkes@gmail.com
 # @Time    : 2024/4/6 15:30
 # @Desc    : sql接口集合
-
 from typing import Dict, List
 
 from db import AsyncMysqlDB

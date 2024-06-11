@@ -18,7 +18,6 @@ from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import weibo as weibo_store
 from tools import utils
 from var import crawler_type_var
-
 from .client import WeiboClient
 from .exception import DataFetchError
 from .field import SearchType

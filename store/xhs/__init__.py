@@ -4,9 +4,9 @@
 # @Desc    :
 from typing import List
 
-import config
+from loguru import logger
 
-from . import xhs_store_impl
+import config
 from .xhs_store_impl import *
 
 
@@ -56,10 +56,10 @@ async def update_xhs_note(note_item: Dict):
         "tag_list": ",".join(
             [tag.get("name", "") for tag in tag_list if tag.get("type") == "topic"]
         ),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "last_modify_ts": get_current_timestamp(),
         "note_url": f"https://www.xiaohongshu.com/explore/{note_id}",
     }
-    utils.logger.info(f"[store.xhs.update_xhs_note] xhs note: {local_db_item}")
+    logger.info(f"[store.xhs.update_xhs_note] xhs note: {local_db_item}")
     await XhsStoreFactory.create_store().store_content(local_db_item)
 
 
@@ -87,9 +87,9 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
         "sub_comment_count": comment_item.get("sub_comment_count", 0),
         "pictures": ",".join(comment_pictures),
         "parent_comment_id": target_comment.get("id", 0),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "last_modify_ts": get_current_timestamp(),
     }
-    utils.logger.info(f"[store.xhs.update_xhs_note_comment] xhs note comment:{local_db_item}")
+    logger.info(f"[store.xhs.update_xhs_note_comment] xhs note comment:{local_db_item}")
     await XhsStoreFactory.create_store().store_comment(local_db_item)
 
 
@@ -120,7 +120,7 @@ async def save_creator(user_id: str, creator: Dict):
         "tag_list": json.dumps(
             {tag.get("tagType"): tag.get("name") for tag in creator.get("tags")}, ensure_ascii=False
         ),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "last_modify_ts": get_current_timestamp(),
     }
-    utils.logger.info(f"[store.xhs.save_creator] creator:{local_db_item}")
+    logger.info(f"[store.xhs.save_creator] creator:{local_db_item}")
     await XhsStoreFactory.create_store().store_creator(local_db_item)

@@ -17,7 +17,6 @@ from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import bilibili as bilibili_store
 from tools import utils
 from var import crawler_type_var
-
 from .client import BilibiliClient
 from .exception import DataFetchError
 from .field import SearchOrderType
